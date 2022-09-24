@@ -1,0 +1,17 @@
+{
+  "name": "twitch-husk",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "run": "node bot.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.2",
+    "node-fetch": "^2.6.7",
+    "tmi.js": "^1.8.5"
+  }
+}
