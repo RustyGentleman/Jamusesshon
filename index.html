@@ -4,10 +4,41 @@
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>HuskTendril test site</title>
-	<script src="bot.js"></script>
+	<title>Ras' Listening Party</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+	<script defer src="app.js"></script>
+	<link rel="stylesheet" href="app.sass.min.css">
 </head>
 <body>
-	
+	<div id="main">
+		<div id="player-wrapper">
+			<div id="player">
+				<iframe src="https://www.youtube.com/embed/W4Mcuh38wyM" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+			</div>
+			<div id="controls">
+				<div id="voteskip-wrapper">
+					<button disabled id="voteskip">👎</button>
+				</div>
+				<div id="request-wrapper">
+					<span>Request a video:</span>
+					<div>
+						<input disabled type="text" id="request-input">
+						<button disabled id="send-request">Request</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="chat-wrapper">
+			<div id="messages">
+				<div class="message sysmsg innate"><span>Once connected, set your username for this session by typing and sending it in chat.</span></div>
+				<div class="message sysmsg innate"><span>You can set your color at any time using the command <code>color=</code> followed by a CSS-valid color, such as <span style="color:limegreen">limegreen</span>, <span style="color:#00ff77">#00ff77</span>, or even <span style="color:hsl(350deg 100% 50%)">hsl(350deg 100% 50%)</span></span></div>
+				<!-- <div class="message"><span class="username">System:</span> <span class="content">This is a message.</span></div> -->
+			</div>
+			<div id="input">
+				<input disabled type="text" id="chat-input" placeholder="Awaiting connection...">
+				<button disabled id="send-message">⩥</button>
+			</div>
+		</div>
+	</div>
 </body>
 </html>

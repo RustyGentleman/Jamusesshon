@@ -1,0 +1,8 @@
+Every second, queue the server to see what's playing
+Compare it to what's playing at the moment
+	If it's too delayed,
+		try to skip ahead
+	If it's playing the wrong thing
+		Change the video
+
+Have each message have its order included when sent to the client

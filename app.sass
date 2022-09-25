@@ -1,0 +1,183 @@
+@mixin fullsize()
+	height: 100%
+	width: 100%
+
+$bg-bgc: rgb(30 50 80)
+$fg-bgc: rgb(10 10 10)
+$controls-size: 100px
+
+:root
+	--chat-width: 350px
+	--gap: 10px
+	--bg-bgc: $bg-bgc
+	--fg-bgc: $fg-bgc
+	color: white
+	font-family: monospace
+
+@media (max-width: 600px)
+	body
+		height: 100vh !important
+		width: 100vw !important
+		#main
+			grid-template-columns: none
+			grid-template-rows: auto 1fr
+			padding: 0
+			gap: 1px
+			#player-wrapper #player iframe
+				aspect-ratio: 16/9
+			#chat-wrapper
+				width: 100%
+				grid-template-rows: calc(30px + var(--gap) * 2) 1fr
+				gap: 1px
+				#input
+					grid-row: 1
+				#messages
+					flex-direction: column-reverse
+					.message
+						border-top: none
+						border-bottom: solid 2px darken($bg-bgc, 10)
+
+body
+	height: calc(100vh - var(--gap) * 2)
+	width: calc(100vw - var(--gap) * 2)
+	margin: 0
+	overflow: hidden
+	&.disconnected
+		.message > *
+			filter: brightness(0.5)
+
+input,
+button
+	&[disabled]
+		filter: contrast(0.5) brightness(0.5) saturate(0.5)
+
+button
+	appearance: none
+	background-color: saturate(lighten($bg-bgc, 30), 100)
+	border: 3px solid saturate(lighten($bg-bgc, 40), 100)
+	color: white
+	display: flex
+	align-items: center
+	justify-content: center
+	cursor: pointer
+
+input
+	box-sizing: border-box
+	border: solid 1px lighten($fg-bgc, 10)
+	background-color: lighten($fg-bgc, 1)
+	padding: 5px
+	color: white
+
+	&:focus-visible
+		outline: none
+		border-color: lighten($fg-bgc, 30)
+
+#main
+	@include fullsize()
+	max-height: calc(100vh - var(--gap) * 2)
+	display: grid
+	grid-template-columns: 1fr var(--chat-width)
+	gap: var(--gap)
+	background-color: $bg-bgc
+	padding: var(--gap)
+
+	> div
+		@include fullsize()
+
+	#chat-wrapper
+		width: var(--chat-width)
+		height: 100%
+		max-height: calc(100vh - var(--gap) * 2)
+		border: 0
+		display: grid
+		grid-template-rows: 1fr calc(30px + var(--gap) * 2)
+		gap: var(--gap)
+		> div
+			background-color: $fg-bgc
+
+		#messages
+			@include fullsize()
+			display: flex
+			flex-direction: column
+			counter-set: messages
+			overflow-y: overlay
+			background-color: $fg-bgc
+
+			.message
+				padding: var(--gap)
+				padding-right: calc(10px + var(--gap))
+				border-top: solid 2px darken($bg-bgc, 10)
+				counter-increment: messages
+				&.sysmsg
+					color: rgb(247, 238, 125)
+					text-align: center
+				.username
+					font-weight: bold
+					color: rgb(0, 183, 255)
+				// .content:after
+				// 	content: counter(messages)
+				// 	margin-left: 10px
+
+		#input
+			padding: var(--gap)
+			display: grid
+			grid-template-columns: 1fr 30px
+			gap: var(--gap)
+			background-color: $fg-bgc
+
+			input
+				@include fullsize()
+				&[placeholder='Set a username']
+					border-color: orange !important
+
+			button
+				height: 30px
+				width: 30px
+				font-size: 1.4em
+
+	#player-wrapper
+		display: grid
+		grid-template-rows: auto $controls-size
+		background-color: $fg-bgc
+
+		#player
+			display: flex
+			justify-content: center
+			align-items: center
+			iframe
+				@include fullsize()
+				border: none
+
+	#controls
+		display: grid
+		grid-template-columns: calc($controls-size - var(--gap) * 2) 1fr
+		gap: var(--gap)
+		padding: var(--gap)
+
+		#voteskip-wrapper
+			height: calc($controls-size - var(--gap) * 2)
+			width: calc($controls-size - var(--gap) * 2)
+
+			#voteskip
+				@include fullsize()
+				font-size: 50px
+
+		#request-wrapper
+			display: flex
+			flex-direction: column
+			align-items: center
+			justify-content: space-evenly
+			> span
+				font-size: 1.5em
+			> div
+				width: 100%
+				display: grid
+				grid-template-columns: 1fr auto
+				gap: var(--gap)
+
+code
+	padding: 0 3px
+	background: rgb(30 30 30)
+	color: white
+	border: solid 1px rgb(50 50 50)
+	border-radius: 3px
