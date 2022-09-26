@@ -4,6 +4,9 @@
 
 $bg-bgc: rgb(30 50 80)
 $fg-bgc: rgb(10 10 10)
+$primary-color: rgb(8, 100, 255)
+$primary-color-darker: darken($primary-color, 20)
+$primary-color-lighter: lighten($primary-color, 20)
 $controls-size: 100px
 
 :root
@@ -23,7 +26,8 @@ $controls-size: 100px
 			grid-template-rows: auto 1fr
 			padding: 0
 			gap: 1px
-			#player-wrapper #player iframe
+			max-height: 100vh
+			#player-section #player-wrapper iframe
 				aspect-ratio: 16/9
 			#chat-wrapper
 				width: 100%
@@ -34,8 +38,8 @@ $controls-size: 100px
 				#messages
 					flex-direction: column-reverse
 					.message
-						border-top: none
-						border-bottom: solid 2px darken($bg-bgc, 10)
+						border-top: solid 2px darken($bg-bgc, 10)
+						border-bottom: none
 
 body
 	height: calc(100vh - var(--gap) * 2)
@@ -53,13 +57,18 @@ button
 
 button
 	appearance: none
-	background-color: saturate(lighten($bg-bgc, 30), 100)
-	border: 3px solid saturate(lighten($bg-bgc, 40), 100)
+	background-color: $primary-color
+	background-blend-mode: screen
+	border: 0
+	box-shadow: inset 0 0 10px 0 $primary-color-darker
 	color: white
 	display: flex
 	align-items: center
 	justify-content: center
 	cursor: pointer
+	transition: filter 100ms ease
+	&:hover
+		filter: brightness(1.5)
 
 input
 	box-sizing: border-box
@@ -106,7 +115,7 @@ input
 			.message
 				padding: var(--gap)
 				padding-right: calc(10px + var(--gap))
-				border-top: solid 2px darken($bg-bgc, 10)
+				border-bottom: solid 2px darken($bg-bgc, 10)
 				counter-increment: messages
 				&.sysmsg
 					color: rgb(247, 238, 125)
@@ -135,17 +144,59 @@ input
 				width: 30px
 				font-size: 1.4em
 
-	#player-wrapper
+	#player-section
 		display: grid
-		grid-template-rows: auto $controls-size
+		grid-template-rows: auto 12px $controls-size
 		background-color: $fg-bgc
+		> div:nth-child(2)
+			position: relative
+			& > div
+				width: 50%
+				height: 12px
+				background-image: linear-gradient(to bottom, transparent, transparent, $primary-color-lighter, transparent, transparent)
+				position: absolute
+				top: 0
 
-		#player
+		#volume
+			margin: 0
+			padding: 0
+			height: 12px
+			width: 100%
+			z-index: 1
+			appearance: none
+			position: relative
+			background-color: transparent
+			border-width: 2px 0
+			border-color: $bg-bgc
+			&::-webkit-slider-runnable-track
+				height: 12px
+			&::-webkit-slider-thumb
+				appearance: none
+				height: 12px
+				width: 12px
+				border-radius: 50%
+				background-color: $primary-color
+				box-shadow: inset 0 0 3px 0 $primary-color-darker
+
+		#player-wrapper
 			display: flex
-			justify-content: center
 			align-items: center
-			iframe
+			justify-content: center
+			> *
 				@include fullsize()
+			#blocker
+				margin-right: -100%
+				z-index: 1
+				display: flex
+				flex-direction: column-reverse
+				#progress
+					height: 20px
+					width: 100%
+					background-image: linear-gradient(to top, $primary-color 5px, transparent 5px)
+					letter-spacing: -0.6px
+					text-align: right
+
+			iframe
 				border: none
 
 	#controls
@@ -161,14 +212,23 @@ input
 			#voteskip
 				@include fullsize()
 				font-size: 50px
+				&.voted
+					border-color: darken(rgb(200, 0, 0), 30)
+					background-color: rgb(200, 0, 0)
 
 		#request-wrapper
 			display: flex
 			flex-direction: column
-			align-items: center
-			justify-content: space-evenly
 			> span
-				font-size: 1.5em
+				@include fullsize()
+				display: flex
+				justify-content: space-between
+				align-items: flex-start
+				padding-bottom: var(--gap)
+				#video-title
+					font-size: 1.5em
+					margin: 0 calc(var(--gap) * 2)
+					align-self: center
 			> div
 				width: 100%
 				display: grid

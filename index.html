@@ -6,21 +6,33 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Ras' Listening Party</title>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+	<script defer src="https://www.youtube.com/iframe_api"></script>
 	<script defer src="app.js"></script>
 	<link rel="stylesheet" href="app.sass.min.css">
 </head>
 <body>
 	<div id="main">
-		<div id="player-wrapper">
-			<div id="player">
-				<iframe src="https://www.youtube.com/embed/W4Mcuh38wyM" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+		<div id="player-section">
+			<div id="player-wrapper">
+				<div id="blocker">
+					<div id="progress">1:00 / 1:00</div>
+				</div>
+				<div id="player"></div>
+			</div>
+			<div>
+				<input type="range" id="volume" step="1" min="0" max="100" value="50">
+				<div></div>
 			</div>
 			<div id="controls">
 				<div id="voteskip-wrapper">
-					<button disabled id="voteskip">👎</button>
+					<button disabled id="voteskip">⦸</button>
 				</div>
 				<div id="request-wrapper">
-					<span>Request a video:</span>
+					<span>
+						<span style="align-self: flex-start">▲ VOL</span>
+						<span id="video-title"></span>
+						<span style="align-self: flex-end">REQ ▼</span>
+					</span>
 					<div>
 						<input disabled type="text" id="request-input">
 						<button disabled id="send-request">Request</button>

@@ -25,14 +25,18 @@ const LOG_CHT = `${LOG_CHT_O}:${LOG_RESET}`
 
 const host = 'localhost'
 const port_server = 8000
-const port_ws = 8001
+
+const ENDED = 0
+const PLAYING = 1
+const PAUSED = 2
+const BUFFERING = 3
+const CUED = 5
 
 // -------------------------------------------- //
 // --------------- Server stuff --------------- //
 //* HTTP server
 const server = http.createServer((req, res) => {
-	if (req.url == '/')
-		console.log(`${LOG_SRV} Page request`)
+	console.log(`${LOG_SRV} [${req.remoteAddress}] ${req.method} ${req.url}`)
 	if (req.method == 'POST') {
 		let body = ''
 		req.on('data', chunk => body += chunk)
@@ -113,45 +117,93 @@ class WSR {
 	 * @param {string} type 
 	 * @param {object} content 
 	 */
-	constructor(type, content) {
+	constructor(type, content={}) {
 		this.content = content
 		this.content.type = type
 	}
 
-	get string() {return JSON.stringify(this.content)}
+	toString() {
+		return JSON.stringify(this.content)
+	}
 }
 
 //* WebSocket server
 let message_list = []
+let clients_ready = []
+let clients_done = []
 let msg_index = 0
+
 const wsserver = new WebSocketServer({httpServer: server})
 wsserver.on('request', function(request) {
 	const connection = request.accept(null, request.origin)
 	console.log(`${LOG_CHT} [${request.remoteAddress}] has connected`)
-	connection.sendUTF(new WSR('history', {history: message_list}).string)
+	//- Send chat history
+	connection.sendUTF(new WSR('history', {history: message_list}))
+	//- Send current video, if there is one
+	if (queue.current)
+		connection.sendUTF(new WSR('video', queue.current))
 
-	connection.on('message', (message) => {
+	connection.on('message', async (message) => {
+		// console.log(message.utf8Data)
 		try {
 			const msg = JSON.parse(message.utf8Data)
-			console.log(`${LOG_CHT} ${message.utf8Data}`)
 
-			if (msg.token == 'unreceived') {
-				connection.sendUTF(new WSR('token', {token: request.key}).string)
-				return
-			}
-			if (msg.content) {
+			if (msg.token == 'unreceived')
+				connection.sendUTF(new WSR('token', {token: request.key}))
+			else if (msg.message) {
+				if (msg.message == '##start') {
+					queue.Dequeue()
+					return
+				}
 				const message_object = {
 					username: msg.username,
-					content: msg.content,
+					message: msg.message,
 					order: msg_index++,
 					color: msg.color
 				}
 				message_list.push(message_object)
-				wsserver.connections.forEach(c => c.sendUTF(new WSR('message', message_object).string))
+				broadcast(new WSR('message', message_object))
+				console.log(`${LOG_CHT_O}:\u001b[0;34m ${msg.username}@${connection.remoteAddress}:${LOG_RESET} ${msg.message}`)
 			}
-		} catch (e) {console.error(e)}
+			else if (msg.query) {
+				const result = await SearchYouTube(msg.query)
+				queue.Queue(new QueueItem(msg.username, msg.color, result.title, result.id))
+				SendSystemMessage(`${msg.color?`<span style="color:${msg.color}">`:''}[${msg.username}]${msg.color?'</span>':''} added [${result.title}] to the queue`)
+				console.log(`${LOG_SYS} [${msg.username}] added [${result.title}] to the queue`)
+			}
+			else if (msg.vote != undefined) {
+				queue.Voteskip(msg.username, msg.vote, msg.color)
+				connection.sendUTF(new WSR('confirmvote', {vote: msg.vote}))
+			}
+			else if (msg.playstate) {
+				console.log(`${LOG_CHT} ${msg.username}@${request.remoteAddress} ${msg.playstate}`)
+				switch (msg.playstate) {
+					case 'CUED':
+						clients_ready.push(msg.username)
+						console.log(`${LOG_SYS} Clients ready out of ${chatter_count()}: ${JSON.stringify(clients_ready)}`)
+						if (clients_ready.length == wsserver.connections.length) {
+							clients_ready = []
+							broadcast(new WSR('player', {order: PLAYING}))
+						}
+						break
+					case 'PLAYING':
+						connection.sendUTF(new WSR('catchup', {start: queue.current.start_time}))
+						break
+					case 'ENDED':
+						clients_done.push(msg.username)
+						console.log(`${LOG_SYS} Clients done out of ${chatter_count()}: ${JSON.stringify(clients_done)}`)
+						if (clients_done.length == 1)
+							SendSystemMessage(`That was [${queue.current.title}], requested by ${msg.color?`<span style="color:${msg.color}">`:''}[${queue.current.requester}]${msg.color?'</span>':''}!${queue.empty? '' : '\nNext will be cued once all have finished'}`)
+						if (clients_done.length == wsserver.connections.length) {
+							clients_done = []
+							queue.Dequeue()
+						}
+						break
+				}
+			}
+		} catch (e) {console.error(e); console.log(message)}
 	})
-	connection.on('close', (reasonCode, description) => console.log(`${LOG_CHT} [${request.remoteAddress}] has connected`))
+	connection.on('close', (reasonCode, description) => console.log(`${LOG_CHT} [${request.remoteAddress}] has disconnected`))
 })
 
 // -------------------------------------------- //
@@ -160,11 +212,13 @@ wsserver.on('request', function(request) {
 //* Classes
 class QueueItem {
 	requester
+	requesterColor
 	title
 	id
 	
-	constructor(requester, title, id) {
+	constructor(requester, color, title, id) {
 		this.requester = requester
+		this.requesterColor = color
 		this.title = title
 		this.id = id
 	}
@@ -176,11 +230,15 @@ class QueueItem {
 class Queue {
 	list = []
 	current
+	current_start
 	skipvotes = []
 	skip_threshold = 0.5
 
 	get votes_needed() {
 		return Math.max(1, Math.floor(chatter_count() * queue.skip_threshold))
+	}
+	get empty() {
+		return this.list.length == 0
 	}
 
 	/**
@@ -194,17 +252,21 @@ class Queue {
 		return size - this.list.length
 	}
 	/**
-	 * Adds item to the end of the queue and returns the length of the queue
+	 * Adds item to the end of the queue, and dequeues it if it's the only one
 	 * @param {QueueItem} item Item to be added to the queue
 	 */
 	Queue(item) {
-		return this.list.push(item)
+		this.list.push(item)
 	}
 	/**
-	 * Dequeues first item in the list and returns it
+	 * Sends next video on queue out to be played
 	 */
 	Dequeue() {
-		return this.current = this.list.shift()
+		if (this.empty) return
+		this.current = this.list.shift()
+		this.current.start_time = Date.now()
+		broadcast(new WSR('video', this.current))
+		SendSystemMessage(`Cuing [${this.current.title}], requested by ${this.current.requesterColor?`<span style="color:${this.current.requesterColor}">`:''}[${this.current.requester}]${this.current.requesterColor?'</span>':''}`)
 	}
 	/**
 	 * Resets the queue
@@ -214,14 +276,22 @@ class Queue {
 		this.skipvotes = []
 		this.skip_threshold = 0.5
 	}
-	Voteskip(username) {
-		if (this.skipvotes.includes(username)) return
-		this.skipvotes.push(username)
+	Voteskip(username, vote, color='') {
+		if (vote == true && this.skipvotes.includes(username)) return
+		console.log(queue.skipvotes)
+		if (vote == true)
+			this.skipvotes.push(username)
+		else if (vote == false)
+			this.skipvotes = this.skipvotes.filter(u => u != username)
+
 		if (this.skipvotes.length < this.votes_needed)
-		Action(`Skip votes: ${this.skipvotes}/${votes_needed()}`)
+			SendSystemMessage(`${color.length?`<span style="color:${color}">`:''}[${username}]${color.length?'</span>':''} has ${vote? 'voted to skip' : 'removed their vote'}.\nSkip votes: ${this.skipvotes.length}/${this.votes_needed}`)
 		else {
-			Action(`Skipping`)
-			this.Dequeue()
+			SendSystemMessage(`${color.length?`<span style="color:${color}">`:''}[${username}]${color.length?'</span>':''} has ${vote? 'voted to skip' : 'removed their vote'}.\nSkipping`)
+			if (this.empty)
+				broadcast(new WSR('player', {order: ENDED}))
+			else
+				this.Dequeue()
 		}
 	}
 }
@@ -242,4 +312,24 @@ async function SearchYouTube(query) {
 		const title = full.snippet.title.replaceAll('&#39;', '\'')
 		return { id: id, title: title, full: full }
 	}
+}
+/**
+ * Sends stringified message to all WebSocket clients
+ * @param {stringified} content Stringified message
+ */
+function broadcast(content) {
+	wsserver.connections.forEach(c => c.sendUTF(content))
+}
+/**
+ * Sends a chat message as the system to all clients
+ * @param {string} msg Message
+ */
+function SendSystemMessage(msg) {
+	const message = {
+		username: '<<System>>',
+		message: msg,
+		order: msg_index++,
+	}
+	message_list.push(message)
+	broadcast(new WSR('message', message))
 }

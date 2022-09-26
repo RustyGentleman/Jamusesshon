@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "run": "node server.js"
+    "run": "node server.js",
+    "forward": "lt --port 8000"
   },
   "keywords": [],
   "author": "",
