@@ -4,9 +4,10 @@
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Ras' Listening Party</title>
+	<title>Jamusesshon</title>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-	<script defer src="https://www.youtube.com/iframe_api"></script>
+	<script src="howler.core.min.js"></script>
+	<script src="https://www.youtube.com/iframe_api"></script>
 	<script defer src="app.js"></script>
 	<link rel="stylesheet" href="app.sass.min.css">
 </head>
@@ -15,9 +16,9 @@
 		<div id="player-section">
 			<div id="player-wrapper">
 				<div id="blocker">
-					<div id="progress">1:00 / 1:00</div>
+					<div id="progress"></div>
 				</div>
-				<div id="player"></div>
+				<div id="player" tabindex="-1"></div>
 			</div>
 			<div>
 				<input type="range" id="volume" step="1" min="0" max="100" value="50">
@@ -25,30 +26,47 @@
 			</div>
 			<div id="controls">
 				<div id="voteskip-wrapper">
-					<button disabled id="voteskip">⦸</button>
+					<button disabled id="voteskip">VOTE SKIP</button>
 				</div>
 				<div id="request-wrapper">
 					<span>
-						<span style="align-self: flex-start">▲ VOL</span>
-						<span id="video-title"></span>
-						<span style="align-self: flex-end">REQ ▼</span>
+						<span style="position: absolute; top: 0; left: 0;">▲ VOL</span>
+						<span id="video-title" style="text-align: center"></span>
 					</span>
 					<div>
-						<input disabled type="text" id="request-input">
-						<button disabled id="send-request">Request</button>
+						<input disabled type="text" id="request-input" tabindex="2">
+						<button disabled id="send-request" tabindex="-1">Request</button>
+						<button disabled id="queue-toggle">▤</button>
 					</div>
 				</div>
 			</div>
 		</div>
 		<div id="chat-wrapper">
+			<div id="chat-header">
+				<img id="title" src="title.svg" alt="Jamusesshon">
+			</div>
 			<div id="messages">
 				<div class="message sysmsg innate"><span>Once connected, set your username for this session by typing and sending it in chat.</span></div>
-				<div class="message sysmsg innate"><span>You can set your color at any time using the command <code>color=</code> followed by a CSS-valid color, such as <span style="color:limegreen">limegreen</span>, <span style="color:#00ff77">#00ff77</span>, or even <span style="color:hsl(350deg 100% 50%)">hsl(350deg 100% 50%)</span></span></div>
+				<div class="message sysmsg innate"><span>Commands:<br>
+					<code>username=</code> - set your username<br>
+					<code>color=</code> - set your chat color<br>
+					Any CSS-valid color will work, such as:<br>
+					<span style="color:limegreen">limegreen</span>, <span style="color:#00ff77">#00ff77</span>, or even <span style="color:hsl(350deg 100% 50%)">hsl(350deg 100% 50%)</span></span></div>
 				<!-- <div class="message"><span class="username">System:</span> <span class="content">This is a message.</span></div> -->
 			</div>
 			<div id="input">
-				<input disabled type="text" id="chat-input" placeholder="Awaiting connection...">
-				<button disabled id="send-message">⩥</button>
+				<input disabled type="text" id="chat-input" placeholder="Awaiting connection..." autocomplete="off" tabindex="1">
+				<button disabled id="send-message" tabindex="-1">⩥</button>
+			</div>
+		</div>
+		<div id="queue">
+			<div class="entry current">
+				<img src="https://i.ytimg.com/vi/IeENKWcitCw/mqdefault.jpg">
+				<div class="info">
+					<span class="media-title">HAKEN - Nightingale (OFFICIAL VIDEO)</span>
+					<span class="media-channel">InsideOutMusicTV</span>
+					<span class="username">[Rasutei]</span>
+				</div>
 			</div>
 		</div>
 	</div>
